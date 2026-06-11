@@ -1,10 +1,18 @@
 const { ipcMain } = require('electron');
 const { getDb } = require('../database');
 
+const LUNCH_START = 13 * 60; // 1:00 PM
+const LUNCH_END   = 14 * 60; // 2:00 PM
+
 function hoursWorked(timeIn, timeOut) {
   const [h1, m1] = timeIn.split(':').map(Number);
   const [h2, m2] = timeOut.split(':').map(Number);
-  return (h2 * 60 + m2 - (h1 * 60 + m1)) / 60;
+  const start = h1 * 60 + m1;
+  const end   = h2 * 60 + m2;
+  const raw   = end - start;
+  if (raw <= 0) return 0;
+  const lunch = Math.max(0, Math.min(end, LUNCH_END) - Math.max(start, LUNCH_START));
+  return (raw - lunch) / 60;
 }
 
 function computePayroll(employee, attendanceRows, deductAmount, previousCompanyBalance, payAmount) {
