@@ -1,0 +1,81 @@
+{
+  "name": "payroll-manager",
+  "version": "1.0.0",
+  "description": "Desktop Payroll Management System",
+  "main": "main/main.js",
+  "scripts": {
+    "dev": "concurrently -k \"npm run dev:renderer\" \"wait-on tcp:5173 && npm run dev:electron\"",
+    "dev:renderer": "vite renderer --port 5173",
+    "dev:electron": "cross-env NODE_ENV=development electron .",
+    "build": "vite build renderer && electron-builder",
+    "build:renderer": "vite build renderer",
+    "pack": "vite build renderer && electron-builder --dir",
+    "seed": "node scripts/seed.js"
+  },
+  "keywords": [],
+  "author": "Your Business",
+  "license": "ISC",
+  "build": {
+    "appId": "com.yourbusiness.payrollmanager",
+    "productName": "Payroll Manager",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main/**/*",
+      "assets/**/*",
+      "renderer/dist/**/*",
+      "node_modules/**/*",
+      "package.json"
+    ],
+    "mac": {
+      "icon": "assets/icon.icns",
+      "category": "public.app-category.business",
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
+      ]
+    },
+    "win": {
+      "icon": "assets/icon.ico",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Payroll Manager"
+    }
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^6.0.2",
+    "electron": "^42.4.0",
+    "electron-builder": "^26.15.2",
+    "playwright-core": "^1.60.0",
+    "vite": "^8.0.16",
+    "wait-on": "^9.0.10"
+  },
+  "dependencies": {
+    "@tailwindcss/vite": "^4.3.0",
+    "better-sqlite3": "^12.10.0",
+    "concurrently": "^10.0.3",
+    "cross-env": "^10.1.0",
+    "electron-squirrel-startup": "^1.0.1",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
+    "react-router-dom": "^7.17.0",
+    "tailwindcss": "^4.3.0",
+    "xlsx": "^0.18.5"
+  }
+}
