@@ -15,17 +15,19 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
-          cache: npm
+          node-version: 22
 
-      - name: Install dependencies (skip postinstall)
-        run: npm ci --ignore-scripts
+      - name: Install dependencies
+        run: npm ci
 
-      - name: Rebuild native modules for Electron
-        run: ./node_modules/.bin/electron-rebuild -f -w better-sqlite3
+      - name: Build renderer
+        run: npm run build:renderer
 
       - name: Build Mac DMG
-        run: npm run build:mac
+        run: npx electron-builder --mac --config.npmRebuild=true
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+          DEBUG: electron-builder
 
       - name: Upload Mac DMGs
         uses: actions/upload-artifact@v4
@@ -42,22 +44,16 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
-          cache: npm
+          node-version: 22
 
-      - name: Setup Python (needed for native module build)
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
+      - name: Install dependencies
+        run: npm ci
 
-      - name: Install dependencies (skip postinstall)
-        run: npm ci --ignore-scripts
-
-      - name: Rebuild native modules for Electron
-        run: ./node_modules/.bin/electron-rebuild -f -w better-sqlite3
+      - name: Build renderer
+        run: npm run build:renderer
 
       - name: Build Windows installer
-        run: npm run build:win
+        run: npx electron-builder --win --config.npmRebuild=true
 
       - name: Upload Windows installer
         uses: actions/upload-artifact@v4
@@ -100,13 +96,13 @@ jobs:
 
             **Windows:**
             1. Download `Payroll Manager Setup 1.0.0.exe`
-            2. Double-click → click Install
-            3. Open from Start Menu or Desktop
+            2. Double-click → click Install → Done
+            3. Open from Start Menu or Desktop shortcut
 
             **Mac (M1/M2/M3):**
             1. Download `Payroll Manager-1.0.0-arm64.dmg`
-            2. Open it → drag app to Applications
-            3. Right-click the app → Open (first time only)
+            2. Open → drag app to Applications folder
+            3. First time: right-click the app → Open
 
             **Mac (Intel):**
             1. Download `Payroll Manager-1.0.0.dmg`
