@@ -3,8 +3,8 @@ name: Build Installers
 on:
   push:
     tags:
-      - 'v*'          # triggers on v1.0.0, v1.1.0, etc.
-  workflow_dispatch:  # lets you trigger manually from GitHub UI
+      - 'v*'
+  workflow_dispatch:
 
 jobs:
   build-mac:
@@ -18,16 +18,19 @@ jobs:
           node-version: 20
           cache: npm
 
-      - name: Install dependencies
-        run: npm ci
+      - name: Install dependencies (skip postinstall)
+        run: npm ci --ignore-scripts
+
+      - name: Rebuild native modules for Electron
+        run: ./node_modules/.bin/electron-rebuild -f -w better-sqlite3
 
       - name: Build Mac DMG
         run: npm run build:mac
 
-      - name: Upload Mac arm64 DMG
+      - name: Upload Mac DMGs
         uses: actions/upload-artifact@v4
         with:
-          name: mac-arm64
+          name: mac-dmg
           path: dist/*.dmg
           if-no-files-found: error
 
@@ -42,8 +45,16 @@ jobs:
           node-version: 20
           cache: npm
 
-      - name: Install dependencies
-        run: npm ci
+      - name: Setup Python (needed for native module build)
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies (skip postinstall)
+        run: npm ci --ignore-scripts
+
+      - name: Rebuild native modules for Electron
+        run: ./node_modules/.bin/electron-rebuild -f -w better-sqlite3
 
       - name: Build Windows installer
         run: npm run build:win
@@ -66,7 +77,7 @@ jobs:
       - name: Download Mac artifact
         uses: actions/download-artifact@v4
         with:
-          name: mac-arm64
+          name: mac-dmg
           path: artifacts/mac
 
       - name: Download Windows artifact
@@ -85,7 +96,18 @@ jobs:
           body: |
             ## Payroll Manager ${{ github.ref_name }}
 
-            ### Downloads
-            - **Mac (M1/M2/M3)** → download the `-arm64.dmg` file
-            - **Mac (Intel)** → download the `.dmg` file (no arm64 in name)
-            - **Windows** → download the `.exe` file, run as installer
+            ### How to install
+
+            **Windows:**
+            1. Download `Payroll Manager Setup 1.0.0.exe`
+            2. Double-click → click Install
+            3. Open from Start Menu or Desktop
+
+            **Mac (M1/M2/M3):**
+            1. Download `Payroll Manager-1.0.0-arm64.dmg`
+            2. Open it → drag app to Applications
+            3. Right-click the app → Open (first time only)
+
+            **Mac (Intel):**
+            1. Download `Payroll Manager-1.0.0.dmg`
+            2. Same steps as above
