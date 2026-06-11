@@ -72,10 +72,38 @@ function runMigrations() {
 }
 
 function runColumnMigrations() {
-  const cols = db.prepare('PRAGMA table_info(advances)').all().map((c) => c.name);
-  if (!cols.includes('remaining_balance')) {
+  // Add remaining_balance to advances if missing
+  const advCols = db.prepare('PRAGMA table_info(advances)').all().map((c) => c.name);
+  if (!advCols.includes('remaining_balance')) {
     db.exec(`ALTER TABLE advances ADD COLUMN remaining_balance REAL`);
     db.exec(`UPDATE advances SET remaining_balance = CASE WHEN is_deducted = 1 THEN 0 ELSE amount END`);
+  }
+
+  // Expand source CHECK to include 'leave' if the current schema doesn't have it
+  const schema = db.prepare(`SELECT sql FROM sqlite_master WHERE type='table' AND name='attendance'`).get();
+  if (schema && !schema.sql.includes("'leave'")) {
+    db.exec(`
+      PRAGMA foreign_keys = OFF;
+
+      ALTER TABLE attendance RENAME TO attendance_old;
+
+      CREATE TABLE attendance (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        employee_id INTEGER NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
+        date TEXT NOT NULL,
+        time_in TEXT NOT NULL,
+        time_out TEXT NOT NULL,
+        source TEXT NOT NULL DEFAULT 'manual' CHECK(source IN ('manual','machine','leave')),
+        created_at TEXT NOT NULL DEFAULT (datetime('now','localtime')),
+        UNIQUE(employee_id, date)
+      );
+
+      INSERT INTO attendance SELECT * FROM attendance_old;
+
+      DROP TABLE attendance_old;
+
+      PRAGMA foreign_keys = ON;
+    `);
   }
 }
 
